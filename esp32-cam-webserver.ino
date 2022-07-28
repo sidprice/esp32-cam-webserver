@@ -27,7 +27,7 @@
  *       or another board which has PSRAM enabled to use high resolution camera modes
  */
 
-
+byte mac[6] ;
 /*
  *  FOR NETWORK AND HARDWARE SETTINGS COPY OR RENAME 'myconfig.sample.h' TO 'myconfig.h' AND EDIT THAT.
  *
@@ -83,7 +83,7 @@ extern void serialDump();
 #if defined(CAM_NAME)
     char myName[] = CAM_NAME;
 #else
-    char myName[] = "ESP32 camera server";
+    char myName[64] = "ESP32 camera server";
 #endif
 
 #if defined(MDNS_NAME)
@@ -564,9 +564,11 @@ void WifiSetup() {
             ip = WiFi.localIP();
             net = WiFi.subnetMask();
             gw = WiFi.gatewayIP();
-            Serial.printf("IP address: %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
-            Serial.printf("Netmask   : %d.%d.%d.%d\r\n",net[0],net[1],net[2],net[3]);
-            Serial.printf("Gateway   : %d.%d.%d.%d\r\n",gw[0],gw[1],gw[2],gw[3]);
+            WiFi.macAddress(mac);
+            Serial.printf("IP address  : %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
+            Serial.printf("Netmask     : %d.%d.%d.%d\r\n",net[0],net[1],net[2],net[3]);
+            Serial.printf("Gateway     : %d.%d.%d.%d\r\n",gw[0],gw[1],gw[2],gw[3]);
+            Serial.printf("MAC address : %02X:%02X:%02X:%02X:%02X:%02X\r\n", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]) ;
             calcURLs();
             // Flash the LED to show we are connected
             for (int i = 0; i < 5; i++) {
@@ -774,6 +776,12 @@ void setup() {
     } else {
         Serial.println("No lamp, or lamp disabled in config");
     }
+    //
+    // Adjust the camera name to use the MAC address to make it unique
+    //
+    WiFi.macAddress(mac) ;
+    sprintf(&myName[0], "ESP32-CAM %02X-%02X-%02X", mac[3], mac[4], mac[5]) ;
+    Serial.println(myName) ;
 
     // Start the camera server
     startCameraServer(httpPort, streamPort);

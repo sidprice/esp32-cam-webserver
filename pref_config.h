@@ -20,7 +20,7 @@
 
 // Common
 #define PREF_COMMON_NETWORK_SSID        "Network_SSID"
-#define PREF_COMMON_NETWORK_IPDDRESS    "Network_IPAddress"
+#define PREF_COMMON_NETWORK_IPADDRESS   "Network_IPAddress"
 #define PREF_COMMON_NETWORK_MASK        "Network_Mask"
 #define PREF_COMMON_MODULE_TYPE         "ESP32-CAM"
 
@@ -32,3 +32,8 @@
 #define PREF_COMMON_DEFAULT_SSID        "Avian Ambassadors"
 #define PREF_COMMON_DEFAULT_IPADDRESS   "192.168.1.254"
 #define PREF_COMMON_DEFAULT_MASK        "255.255.0.0"
+
+//
+// Edit the variable value below to define the module type being built
+//
+#define PREF_COMMON_DEFAULT_MODULE_TYPE "ESP32-CAM"

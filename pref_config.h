@@ -9,7 +9,9 @@
 #pragma once
 
 //
-// Define the names of the the sections of preferences
+// Define the names of the namespaces of preferences
+//
+//  N.B. Names may not exceed 15 characters
 //
 
 #define PREF_COMMON_SECTION "Common"
@@ -17,12 +19,14 @@
 //
 // Define the names of the keys in each of the above sections
 //
+//  N.B. Names may not exceed 15 characters
+//  
 
 // Common
-#define PREF_COMMON_NETWORK_SSID        "Network_SSID"
-#define PREF_COMMON_NETWORK_IPADDRESS   "Network_IPAddress"
-#define PREF_COMMON_NETWORK_MASK        "Network_Mask"
-#define PREF_COMMON_MODULE_TYPE         "ESP32-CAM"
+#define PREF_COMMON_NETWORK_SSID        "Net_SSID"
+#define PREF_COMMON_NETWORK_IPADDRESS   "Net_IP"
+#define PREF_COMMON_NETWORK_MASK        "Net_Mask"
+#define PREF_COMMON_MODULE_TYPE         "Module_Type"
 
 //
 // Define the factory reset values for the preferences

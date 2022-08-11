@@ -647,6 +647,14 @@ void WifiSetup() {
     }
 }
 
+//
+// TODO Remove these and use the real variables
+//
+char strSSID[64] = {0} ;
+char strIPAddress[64] = {0} ;
+char strNetMask[64] = {0} ;
+char strModuleType[64] = {0} ;
+
 void setup() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
@@ -685,26 +693,43 @@ void setup() {
     //
     // Open up the preferences and check if they have been initialized
     //
+    //  TODO Refactor all preferene code to separate files or a library to permit reuse on other module types
+    //
     preferences.begin("Common", false) ;
     //
     // Attempt to read the Network SSID
     //
+    preferences.getString(PREF_COMMON_NETWORK_SSID,strSSID, sizeof(strSSID)) ;
+    if ( strSSID[0] == 0x00 )
     {
-        char strSSID[64] = {0} ;
-        preferences.getString(PREF_COMMON_NETWORK_SSID,strSSID, sizeof(strSSID)) ;
-        if ( strSSID[0] == 0x00 )
-        {
-            Serial.println("Initialize Preferences") ;
-            preferences.putString(PREF_COMMON_NETWORK_SSID, PREF_COMMON_DEFAULT_SSID) ;
-        }
-        else
-        {
-            Serial.print("SSID is -> ") ;
-            Serial.println(strSSID) ;
-        }
-        // preferences.remove(PREF_COMMON_NETWORK_SSID) ;  // Temp
-        preferences.end() ;
+        //
+        // Since the SSID was not found the preferences need to be initialize
+        // to the default values. These may be edited if required in the
+        // "pref_config.h" file.
+        //
+        // Initialize the "Common" values.
+        //      SSID, Network_Address, Network_Mask, and the Module_Type
+        //
+        preferences.putString(PREF_COMMON_NETWORK_SSID, PREF_COMMON_DEFAULT_SSID) ;
+        preferences.putString(PREF_COMMON_NETWORK_IPADDRESS, PREF_COMMON_DEFAULT_IPADDRESS) ;
+        preferences.putString(PREF_COMMON_NETWORK_MASK, PREF_COMMON_DEFAULT_MASK) ;
+        preferences.putString(PREF_COMMON_MODULE_TYPE, PREF_COMMON_DEFAULT_MODULE_TYPE) ;
     }
+    else
+    {
+        //
+        // Load the preferenes and apply them
+        //
+        Serial.print("SSID is -> ") ; Serial.println(strSSID) ;
+        preferences.getString(PREF_COMMON_NETWORK_IPADDRESS,strIPAddress, sizeof(strIPAddress)) ;
+        Serial.print("IPAddress is -> ") ; Serial.println(strIPAddress) ;
+        preferences.getString(PREF_COMMON_NETWORK_MASK,strNetMask, sizeof(strNetMask)) ;
+        Serial.print("Netmask is -> ") ; Serial.println(strNetMask) ;
+        preferences.getString(PREF_COMMON_MODULE_TYPE,strModuleType, sizeof(strModuleType)) ;
+        Serial.print("Module type is -> ") ; Serial.println(strModuleType) ;
+    }
+    // preferences.remove(PREF_COMMON_NETWORK_SSID) ;  // Temp
+    preferences.end() ;
     // Start the SPIFFS filesystem before we initialise the camera
     if (filesystem) {
         filesystemStart();

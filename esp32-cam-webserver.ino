@@ -5,6 +5,7 @@
 #include <DNSServer.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
+#include <Preferences.h>
 #include "src/parsebytes.h"
 #include "time.h"
 #include <ESPmDNS.h>
@@ -28,6 +29,13 @@
  */
 
 byte mac[6] ;
+
+/*
+ *  Include the Preferences name definition file
+ */
+
+#include "pref_config.h"
+
 /*
  *  FOR NETWORK AND HARDWARE SETTINGS COPY OR RENAME 'myconfig.sample.h' TO 'myconfig.h' AND EDIT THAT.
  *
@@ -53,6 +61,15 @@ byte mac[6] ;
 
 // Pin Mappings
 #include "camera_pins.h"
+
+//
+// The following is the preferenes object, used to store network and other
+// settiings for the system.
+//
+// TODO Move SPIFFS storage of camaera settings to Preferences
+//
+
+Preferences preferences ;
 
 // Camera config structure
 camera_config_t config;
@@ -665,6 +682,29 @@ void setup() {
         digitalWrite(LED_PIN, LED_ON);
     #endif
 
+    //
+    // Open up the preferences and check if they have been initialized
+    //
+    preferences.begin("Common", false) ;
+    //
+    // Attempt to read the Network SSID
+    //
+    {
+        char strSSID[64] = {0} ;
+        preferences.getString(PREF_COMMON_NETWORK_SSID,strSSID, sizeof(strSSID)) ;
+        if ( strSSID[0] == 0x00 )
+        {
+            Serial.println("Initialize Preferences") ;
+            preferences.putString(PREF_COMMON_NETWORK_SSID, PREF_COMMON_DEFAULT_SSID) ;
+        }
+        else
+        {
+            Serial.print("SSID is -> ") ;
+            Serial.println(strSSID) ;
+        }
+        // preferences.remove(PREF_COMMON_NETWORK_SSID) ;  // Temp
+        preferences.end() ;
+    }
     // Start the SPIFFS filesystem before we initialise the camera
     if (filesystem) {
         filesystemStart();

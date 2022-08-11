@@ -651,6 +651,7 @@ void WifiSetup() {
 // TODO Remove these and use the real variables
 //
 char strSSID[64] = {0} ;
+char strNetPassphrase[64] = {0} ;
 char strIPAddress[64] = {0} ;
 char strNetMask[64] = {0} ;
 char strModuleType[64] = {0} ;
@@ -711,6 +712,7 @@ void setup() {
         //      SSID, Network_Address, Network_Mask, and the Module_Type
         //
         preferences.putString(PREF_COMMON_NETWORK_SSID, PREF_COMMON_DEFAULT_SSID) ;
+        preferences.putString(PREF_COMMON_NETWORK_PASSPHRASE, PREF_COMMON_DEFAULT_PASSPHRASE) ;
         preferences.putString(PREF_COMMON_NETWORK_IPADDRESS, PREF_COMMON_DEFAULT_IPADDRESS) ;
         preferences.putString(PREF_COMMON_NETWORK_MASK, PREF_COMMON_DEFAULT_MASK) ;
         preferences.putString(PREF_COMMON_MODULE_TYPE, PREF_COMMON_DEFAULT_MODULE_TYPE) ;
@@ -721,6 +723,8 @@ void setup() {
         // Load the preferenes and apply them
         //
         Serial.print("SSID is -> ") ; Serial.println(strSSID) ;
+        preferences.getString(PREF_COMMON_NETWORK_PASSPHRASE,strNetPassphrase, sizeof(strNetPassphrase)) ;
+        Serial.print("Network Passphrase is -> ") ; Serial.println(strNetPassphrase) ;
         preferences.getString(PREF_COMMON_NETWORK_IPADDRESS,strIPAddress, sizeof(strIPAddress)) ;
         Serial.print("IPAddress is -> ") ; Serial.println(strIPAddress) ;
         preferences.getString(PREF_COMMON_NETWORK_MASK,strNetMask, sizeof(strNetMask)) ;

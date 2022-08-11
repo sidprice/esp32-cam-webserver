@@ -24,6 +24,7 @@
 
 // Common
 #define PREF_COMMON_NETWORK_SSID        "Net_SSID"
+#define PREF_COMMON_NETWORK_PASSPHRASE  "Net_Pass"
 #define PREF_COMMON_NETWORK_IPADDRESS   "Net_IP"
 #define PREF_COMMON_NETWORK_MASK        "Net_Mask"
 #define PREF_COMMON_MODULE_TYPE         "Module_Type"
@@ -34,6 +35,7 @@
 
 //  Common
 #define PREF_COMMON_DEFAULT_SSID        "Avian Ambassadors"
+#define PREF_COMMON_DEFAULT_PASSPHRASE  ""      // Place the SSID pass phrase here if network is secure
 #define PREF_COMMON_DEFAULT_IPADDRESS   "192.168.1.254"
 #define PREF_COMMON_DEFAULT_MASK        "255.255.0.0"
 

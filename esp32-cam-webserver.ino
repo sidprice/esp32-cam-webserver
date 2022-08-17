@@ -842,11 +842,13 @@ void setup() {
 }
 
 bool    ssid_changed = false ;
+char    newSSID[64] = {0} ;
 
 void loop() {
     if ( ssid_changed )
     {
-        Serial.println("SSID Changed") ;
+        ssid_changed = false ;
+        Serial.printf("SSID Changed to %s\n", newSSID) ;
     }
     /*
      *  Just loop forever, reconnecting Wifi As necesscary in client mode

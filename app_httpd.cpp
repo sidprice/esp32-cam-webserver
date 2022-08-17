@@ -321,6 +321,8 @@ static esp_err_t stream_handler(httpd_req_t *req){
 }
 
 extern bool    ssid_changed ;
+extern char    newSSID[] ;
+
 static esp_err_t cmd_handler(httpd_req_t *req){
     char*  buf;
     size_t buf_len;
@@ -367,6 +369,7 @@ static esp_err_t cmd_handler(httpd_req_t *req){
     //
     if (!strcmp(variable, "net_ssid"))
     {
+        strcpy(newSSID, value) ;
         ssid_changed = true ;
     }
     else if(!strcmp(variable, "framesize")) {

@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+//  Updates by Sid Price for Kevin Levesque
+//
 
 #include <esp_http_server.h>
 #include <esp_timer.h>
@@ -27,6 +30,8 @@
 #include "src/favicons.h"
 #include "src/logo.h"
 #include "storage.h"
+
+#include "src/prefs.h"
 
 // Functions from the main .ino
 extern void flashLED(int flashtime);
@@ -367,10 +372,9 @@ static esp_err_t cmd_handler(httpd_req_t *req){
     // Process the module specific preferences first because they are the ones most
     // often used in the Wi-Fi Test Setup system
     //
-    if (!strcmp(variable, "net_ssid"))
+    if (preference_change_cb(variable, value))
     {
-        strcpy(newSSID, value) ;
-        ssid_changed = true ;
+         // All done, the command was an API extension
     }
     else if(!strcmp(variable, "framesize")) {
         if(s->pixformat == PIXFORMAT_JPEG) res = s->set_framesize(s, (framesize_t)val);

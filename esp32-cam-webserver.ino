@@ -5,11 +5,10 @@
 #include <DNSServer.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-#include <Preferences.h>
-#include "src/parsebytes.h"
 #include "time.h"
 #include <ESPmDNS.h>
 
+#include "src/prefs.h"
 
 /* This sketch is a extension/expansion/reork of the 'official' ESP32 Camera example
  *  sketch from Expressif:
@@ -29,12 +28,6 @@
  */
 
 byte mac[6] ;
-
-/*
- *  Include the Preferences name definition file
- */
-
-#include "pref_config.h"
 
 /*
  *  FOR NETWORK AND HARDWARE SETTINGS COPY OR RENAME 'myconfig.sample.h' TO 'myconfig.h' AND EDIT THAT.
@@ -61,30 +54,6 @@ byte mac[6] ;
 
 // Pin Mappings
 #include "camera_pins.h"
-
-//
-// The following is the preferenes object, used to store network and other
-// settiings for the system.
-//
-// TODO Move SPIFFS storage of camaera settings to Preferences
-//
-
-Preferences preferences ;
-
-//
-// Common preferences namespace variable storage
-//
-// TODO check if these need to be global variables
-//
-char strSSID[64] = {0} ;
-char strNetPassphrase[64] = {0} ;
-char strIPAddress[64] = {0} ;
-static byte ipAddress[4] = {0} ;
-char strNetMask[64] = {0} ;
-static byte netMask[4] = {0} ;
-char strGateway[64] = {0} ;
-static byte netGateway[4] = {0} ;
-char strModuleType[64] = {0} ;
 
 // Camera config structure
 camera_config_t config;
@@ -612,86 +581,7 @@ void setup() {
         pinMode(LED_PIN, OUTPUT);
         digitalWrite(LED_PIN, LED_ON);
     #endif
-
-    //
-    // Open up the preferences and check if they have been initialized
-    //
-    //  TODO Refactor all preference code to separate files or a library to permit reuse on other module types
-    //
-    if (preferences.begin("Common", false) == false) {
-        Serial.println("Failed to start preferences") ;
-    }
-    //
-    // Attempt to read the Network SSID
-    //
-    preferences.getString(PREF_COMMON_NETWORK_SSID,strSSID, sizeof(strSSID)) ;
-    if ( strSSID[0] == 0x00 )
-    {
-        Serial.println("Preferences need init") ;
-        //
-        // Since the SSID was not found the preferences need to be initialize
-        // to the default values. These may be edited if required in the
-        // "pref_config.h" file.
-        //
-        // Initialize the "Common" values.
-        //      SSID, Network_Address, Network_Mask, and the Module_Type
-        //
-        preferences.putString(PREF_COMMON_NETWORK_SSID, PREF_COMMON_DEFAULT_SSID) ;
-        preferences.putString(PREF_COMMON_NETWORK_PASSPHRASE, PREF_COMMON_DEFAULT_PASSPHRASE) ;
-        preferences.putString(PREF_COMMON_NETWORK_IPADDRESS, PREF_COMMON_DEFAULT_IPADDRESS) ;
-        preferences.putString(PREF_COMMON_NETWORK_GATEWAY, PREF_COMMON_DEFAULT_GATEWAY) ;
-        preferences.putString(PREF_COMMON_NETWORK_MASK, PREF_COMMON_DEFAULT_MASK) ;
-        preferences.putString(PREF_COMMON_MODULE_TYPE, PREF_COMMON_DEFAULT_MODULE_TYPE) ;
-    }
-    Serial.println("Preferences:") ;
-    //
-    // SSID
-    //
-    preferences.getString(PREF_COMMON_NETWORK_SSID, strSSID, sizeof(strNetPassphrase));
-    Serial.print("\tSSID is -> ") ; Serial.println(strSSID) ;
-    //
-    //
-    // Pass Phrase
-    //
-    preferences.getString(PREF_COMMON_NETWORK_PASSPHRASE,strNetPassphrase, sizeof(strNetPassphrase)) ;
-    Serial.print("\tNetwork Passphrase is -> ") ; Serial.println(strNetPassphrase) ;
-    //
-    // IP Address
-    //
-    preferences.getString(PREF_COMMON_NETWORK_IPADDRESS,strIPAddress, sizeof(strIPAddress)) ;
-    //
-    // Convert the loaded string into a byte array for use by the
-    // Wi-Fi configuration code
-    //
-    parseBytes(strIPAddress, '.', ipAddress, 4, 10) ;   // The input string is base 10
-    Serial.print("\tIPAddress is -> ") ; Serial.println(strIPAddress) ;
-    //
-    // Gateway IP address
-    //
-    preferences.getString(PREF_COMMON_NETWORK_GATEWAY,strGateway, sizeof(strGateway)) ;
-    //
-    // Convert the loaded string into a byte array for use by the
-    // Wi-Fi configuration code
-    //
-    parseBytes(strGateway, '.', netGateway, 4, 10) ;   // The input string is base 10
-    Serial.print("\tNetwork Gateway is -> ") ; Serial.println(strGateway) ;
-     //
-    // Network Mask
-    //
-    preferences.getString(PREF_COMMON_NETWORK_MASK,strNetMask, sizeof(strNetMask)) ;
-    //
-    // Convert the loaded string into a byte array for use by the
-    // Wi-Fi configuration code
-    //
-    parseBytes(strNetMask, '.', netMask, 4, 10) ;   // The input string is base 10
-    Serial.print("\tNetmask is -> ") ; Serial.println(strNetMask) ;
-   //
-    // Module Type
-    //
-    preferences.getString(PREF_COMMON_MODULE_TYPE,strModuleType, sizeof(strModuleType)) ;
-    Serial.print("\tModule type is -> ") ; Serial.println(strModuleType) ;
-    // preferences.remove(PREF_COMMON_NETWORK_SSID) ;  // Temp
-    preferences.end() ;
+    prefs_get_preferences() ;
     //
     // Start the SPIFFS filesystem before we initialise the camera
     //
@@ -841,15 +731,7 @@ void setup() {
     while (Serial.available()) Serial.read();
 }
 
-bool    ssid_changed = false ;
-char    newSSID[64] = {0} ;
-
 void loop() {
-    if ( ssid_changed )
-    {
-        ssid_changed = false ;
-        Serial.printf("SSID Changed to %s\n", newSSID) ;
-    }
     /*
      *  Just loop forever, reconnecting Wifi As necesscary in client mode
      * The stream and URI handler processes initiated by the startCameraServer() call at the

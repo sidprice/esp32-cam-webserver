@@ -167,7 +167,7 @@ struct station stationList[] = {{"ssid1", "pass1", true},
 
 // Assume the module used has a SPIFFS/LittleFS partition, and use that for persistent setting storage
 // Uncomment to disable this this, the controls will still be shown in the UI but are inoperative.
-// #define NO_FS
+#define NO_FS
 
 // Uncomment to enable camera debug info on serial by default
 // #define DEBUG_DEFAULT_ON

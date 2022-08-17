@@ -79,7 +79,11 @@ Preferences preferences ;
 char strSSID[64] = {0} ;
 char strNetPassphrase[64] = {0} ;
 char strIPAddress[64] = {0} ;
+static byte ipAddress[4] = {0} ;
 char strNetMask[64] = {0} ;
+static byte netMask[4] = {0} ;
+char strGateway[64] = {0} ;
+static byte netGateway[4] = {0} ;
 char strModuleType[64] = {0} ;
 
 // Camera config structure
@@ -286,6 +290,7 @@ void handleSerial() {
 // Notification LED
 void flashLED(int flashtime) {
 #if defined(LED_PIN)                // If we have it; flash it.
+    Serial.println("Flash the LED") ;
     digitalWrite(LED_PIN, LED_ON);  // On at full power.
     delay(flashtime);               // delay
     digitalWrite(LED_PIN, LED_OFF); // turn Off
@@ -478,6 +483,18 @@ void WifiSetup() {
     // (https://github.com/espressif/arduino-esp32/issues/1484)
     WiFi.setSleep(false);
 
+    //
+    // Configure the device with a static IP address.
+    //
+    // These settings are recovered from the prefernces file
+    // by the setup function. This function MUST be called
+    // before the WifiSetup function.
+    //
+    // Also, the Wi-Fi configuration function must be called
+    // before the Wi-Fi is started
+    //
+    WiFi.config(ipAddress, netGateway, netMask) ;
+
     // Initiate network connection request (3rd argument, channel = 0 is 'auto')
     WiFi.begin(strSSID, (char *)"mijo498rocks") ;
 
@@ -573,6 +590,7 @@ void setup() {
     Serial.println(baseVersion);
     Serial.println();
 
+    flashLED(250) ;
     // Warn if no PSRAM is detected (typically user error with board selection in the IDE)
     if(!psramFound()){
         Serial.println("\r\nFatal Error; Halting");
@@ -598,15 +616,18 @@ void setup() {
     //
     // Open up the preferences and check if they have been initialized
     //
-    //  TODO Refactor all preferene code to separate files or a library to permit reuse on other module types
+    //  TODO Refactor all preference code to separate files or a library to permit reuse on other module types
     //
-    preferences.begin("Common", false) ;
+    if (preferences.begin("Common", false) == false) {
+        Serial.println("Failed to start preferences") ;
+    }
     //
     // Attempt to read the Network SSID
     //
     preferences.getString(PREF_COMMON_NETWORK_SSID,strSSID, sizeof(strSSID)) ;
     if ( strSSID[0] == 0x00 )
     {
+        Serial.println("Preferences need init") ;
         //
         // Since the SSID was not found the preferences need to be initialize
         // to the default values. These may be edited if required in the
@@ -618,28 +639,67 @@ void setup() {
         preferences.putString(PREF_COMMON_NETWORK_SSID, PREF_COMMON_DEFAULT_SSID) ;
         preferences.putString(PREF_COMMON_NETWORK_PASSPHRASE, PREF_COMMON_DEFAULT_PASSPHRASE) ;
         preferences.putString(PREF_COMMON_NETWORK_IPADDRESS, PREF_COMMON_DEFAULT_IPADDRESS) ;
+        preferences.putString(PREF_COMMON_NETWORK_GATEWAY, PREF_COMMON_DEFAULT_GATEWAY) ;
         preferences.putString(PREF_COMMON_NETWORK_MASK, PREF_COMMON_DEFAULT_MASK) ;
         preferences.putString(PREF_COMMON_MODULE_TYPE, PREF_COMMON_DEFAULT_MODULE_TYPE) ;
     }
-    else
-    {
-        //
-        // Load the preferenes and apply them
-        //
-        Serial.print("SSID is -> ") ; Serial.println(strSSID) ;
-        preferences.getString(PREF_COMMON_NETWORK_PASSPHRASE,strNetPassphrase, sizeof(strNetPassphrase)) ;
-        Serial.print("Network Passphrase is -> ") ; Serial.println(strNetPassphrase) ;
-        preferences.getString(PREF_COMMON_NETWORK_IPADDRESS,strIPAddress, sizeof(strIPAddress)) ;
-        Serial.print("IPAddress is -> ") ; Serial.println(strIPAddress) ;
-        preferences.getString(PREF_COMMON_NETWORK_MASK,strNetMask, sizeof(strNetMask)) ;
-        Serial.print("Netmask is -> ") ; Serial.println(strNetMask) ;
-        preferences.getString(PREF_COMMON_MODULE_TYPE,strModuleType, sizeof(strModuleType)) ;
-        Serial.print("Module type is -> ") ; Serial.println(strModuleType) ;
-    }
+    Serial.println("Preferences:") ;
+    //
+    // SSID
+    //
+    preferences.getString(PREF_COMMON_NETWORK_SSID, strSSID, sizeof(strNetPassphrase));
+    Serial.print("\tSSID is -> ") ; Serial.println(strSSID) ;
+    //
+    //
+    // Pass Phrase
+    //
+    preferences.getString(PREF_COMMON_NETWORK_PASSPHRASE,strNetPassphrase, sizeof(strNetPassphrase)) ;
+    Serial.print("\tNetwork Passphrase is -> ") ; Serial.println(strNetPassphrase) ;
+    //
+    // IP Address
+    //
+    preferences.getString(PREF_COMMON_NETWORK_IPADDRESS,strIPAddress, sizeof(strIPAddress)) ;
+    //
+    // Convert the loaded string into a byte array for use by the
+    // Wi-Fi configuration code
+    //
+    parseBytes(strIPAddress, '.', ipAddress, 4, 10) ;   // The input string is base 10
+    Serial.print("\tIPAddress is -> ") ; Serial.println(strIPAddress) ;
+    //
+    // Gateway IP address
+    //
+    preferences.getString(PREF_COMMON_NETWORK_GATEWAY,strGateway, sizeof(strGateway)) ;
+    //
+    // Convert the loaded string into a byte array for use by the
+    // Wi-Fi configuration code
+    //
+    parseBytes(strGateway, '.', netGateway, 4, 10) ;   // The input string is base 10
+    Serial.print("\tNetwork Gateway is -> ") ; Serial.println(strGateway) ;
+     //
+    // Network Mask
+    //
+    preferences.getString(PREF_COMMON_NETWORK_MASK,strNetMask, sizeof(strNetMask)) ;
+    //
+    // Convert the loaded string into a byte array for use by the
+    // Wi-Fi configuration code
+    //
+    parseBytes(strNetMask, '.', netMask, 4, 10) ;   // The input string is base 10
+    Serial.print("\tNetmask is -> ") ; Serial.println(strNetMask) ;
+   //
+    // Module Type
+    //
+    preferences.getString(PREF_COMMON_MODULE_TYPE,strModuleType, sizeof(strModuleType)) ;
+    Serial.print("\tModule type is -> ") ; Serial.println(strModuleType) ;
     // preferences.remove(PREF_COMMON_NETWORK_SSID) ;  // Temp
     preferences.end() ;
+    //
     // Start the SPIFFS filesystem before we initialise the camera
+    //
+    //  For this projct the file system is not used and the variable
+    // NO_FS is uncommented in myconfig.h
+    //
     if (filesystem) {
+        Serial.println("FS Starting") ;
         filesystemStart();
         delay(200); // a short delay to let spi bus settle after SPIFFS init
     }
@@ -665,6 +725,7 @@ void setup() {
         delay(1000);
     }
 
+#if 0
     // Set up OTA
     if (otaEnabled) {
         // Start OTA once connected
@@ -718,12 +779,13 @@ void setup() {
           Serial.println("Error setting up MDNS responder!");
         }
         Serial.println("mDNS responder started");
+        Serial.print("MDNS Name is ") ; Serial.println(mdnsName) ;
     }
 
     //MDNS Config -- note that if OTA is NOT enabled this needs prior steps!
     MDNS.addService("http", "tcp", 80);
     Serial.println("Added HTTP service to MDNS server");
-
+#endif
     // Set time via NTP server when enabled
     if (haveTime) {
         Serial.print("Time: ");

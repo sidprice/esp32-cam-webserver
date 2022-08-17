@@ -841,7 +841,13 @@ void setup() {
     while (Serial.available()) Serial.read();
 }
 
+bool    ssid_changed = false ;
+
 void loop() {
+    if ( ssid_changed )
+    {
+        Serial.println("SSID Changed") ;
+    }
     /*
      *  Just loop forever, reconnecting Wifi As necesscary in client mode
      * The stream and URI handler processes initiated by the startCameraServer() call at the

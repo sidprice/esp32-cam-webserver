@@ -320,6 +320,7 @@ static esp_err_t stream_handler(httpd_req_t *req){
     return res;
 }
 
+extern bool    ssid_changed ;
 static esp_err_t cmd_handler(httpd_req_t *req){
     char*  buf;
     size_t buf_len;
@@ -359,7 +360,16 @@ static esp_err_t cmd_handler(httpd_req_t *req){
     int val = atoi(value);
     sensor_t * s = esp_camera_sensor_get();
     int res = 0;
-    if(!strcmp(variable, "framesize")) {
+    Serial.println("Command") ;
+    //
+    // Process the module specific preferences first because they are the ones most
+    // often used in the Wi-Fi Test Setup system
+    //
+    if (!strcmp(variable, "net_ssid"))
+    {
+        ssid_changed = true ;
+    }
+    else if(!strcmp(variable, "framesize")) {
         if(s->pixformat == PIXFORMAT_JPEG) res = s->set_framesize(s, (framesize_t)val);
     }
     else if(!strcmp(variable, "quality")) res = s->set_quality(s, val);

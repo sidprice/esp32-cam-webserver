@@ -66,7 +66,6 @@ net_gateway     - The network's gateway address - default is 192.168.0.1
 net_mask        - The network's ip address mask - default is 255.255.0.0
 
                 - OTHER COMMANDS
-mod_reboot      - Restart the module. Uaed to apply new preferences
 fac_default     - Used to reset all preferecnes to defaults and reboots the module to apply them
 ```
 #### Read Only

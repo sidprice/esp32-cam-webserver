@@ -10,7 +10,7 @@
 
 #include "src/prefs.h"
 
-/* This sketch is a extension/expansion/reork of the 'official' ESP32 Camera example
+/* This sketch is a extension/expansion/rework of the 'official' ESP32 Camera example
  *  sketch from Expressif:
  *  https://github.com/espressif/arduino-esp32/tree/master/libraries/ESP32/examples/Camera/CameraWebServer
  *
@@ -25,6 +25,9 @@
  *  more feeedback, new controls and other tweaks and changes,
  * note: Make sure that you have either selected ESP32 AI Thinker,
  *       or another board which has PSRAM enabled to use high resolution camera modes
+ * 
+ * It is further updated by Sid Price for Kevin Levesque.
+ * 
  */
 
 byte mac[6] ;
@@ -54,6 +57,12 @@ byte mac[6] ;
 
 // Pin Mappings
 #include "camera_pins.h"
+
+//
+// Define the GPIO pin used for factory reset input, this is one of
+// the SD Card GPIO pins, SD Card cannot be used.
+//
+#define FACTOR_RESET    2   // GOIO2
 
 // Camera config structure
 camera_config_t config;
@@ -258,8 +267,7 @@ void handleSerial() {
 
 // Notification LED
 void flashLED(int flashtime) {
-#if defined(LED_PIN)                // If we have it; flash it.
-    Serial.println("Flash the LED") ;
+#if defined(LED_PIN)
     digitalWrite(LED_PIN, LED_ON);  // On at full power.
     delay(flashtime);               // delay
     digitalWrite(LED_PIN, LED_OFF); // turn Off
@@ -581,7 +589,10 @@ void setup() {
         pinMode(LED_PIN, OUTPUT);
         digitalWrite(LED_PIN, LED_ON);
     #endif
-    prefs_get_preferences() ;
+
+    // Set up the factory reset pin as an input
+    pinMode(FACTOR_RESET, INPUT_PULLUP | INPUT) ;
+    prefs_get_preferences(!digitalRead(FACTOR_RESET)) ;
     //
     // Start the SPIFFS filesystem before we initialise the camera
     //

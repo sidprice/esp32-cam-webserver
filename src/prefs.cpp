@@ -68,7 +68,7 @@ void prefs_update_string(char * key, char * value)
 // The preferences are then read into variables for use by the module
 //
 
-void prefs_get_preferences(void)
+void prefs_get_preferences(bool factoryReset)
 {
     //
     // Open up the preferences and check if they have been initialized
@@ -77,6 +77,15 @@ void prefs_get_preferences(void)
     //
     if (preferences.begin("Common", false) == false) {
         Serial.println("Failed to start preferences") ;
+    }
+    //
+    // Check if factory reset is true, if so remove the SSID, this will
+    // force the preferences to be set to defaults
+    //
+    if ( factoryReset )
+    {
+        Serial.println("FACTORY RESET") ;
+        preferences.remove(PREF_COMMON_NETWORK_SSID) ; 
     }
     //
     // Attempt to read the Network SSID
@@ -149,6 +158,7 @@ void prefs_get_preferences(void)
     Serial.print("\tModule type is -> ") ; Serial.println(strModuleType) ;
     // preferences.remove(PREF_COMMON_NETWORK_SSID) ;  // Temp
     preferences.end() ;
+    while(1) ;
 
 }
 

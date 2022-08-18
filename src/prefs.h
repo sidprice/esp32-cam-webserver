@@ -14,5 +14,5 @@ extern byte netMask[] ;
 extern char strSSID[] ;
 extern char strNetPassphrase[] ;
 
-void prefs_get_preferences(void) ;
+void prefs_get_preferences(bool factoryReset) ;
 bool preference_change_cb(char *key, char *value) ;

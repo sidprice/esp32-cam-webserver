@@ -46,6 +46,28 @@ char strGateway[64] = {0} ;
 byte netGateway[4] = {0} ;
 char strModuleType[64] = {0} ;
 
+//
+// Update the passed preference with the passed data
+//
+// Note this function assumes the host device has already initialized
+// the preferences during its startup. Otherwise the function will fail
+//
+
+void prefs_update_string(char * key, char * value)
+{
+    preferences.begin("Common", false) ; // Open preferences common section for read/write
+    preferences.putString(key, value) ;
+    preferences.end() ;     // CLose the preferences
+}
+
+//
+// This function is called during the device set up, it attempts to read the
+// Network SSID, if this fails it assumes the preferences need initialization
+// and sets all values to their defaults.
+//
+// The preferences are then read into variables for use by the module
+//
+
 void prefs_get_preferences(void)
 {
     //
@@ -129,6 +151,7 @@ void prefs_get_preferences(void)
     preferences.end() ;
 
 }
+
 //
 // This callback function is called each tome the module receives an http command. It checks
 // if it is a preferecne related extension command and if it is it executes the command and 
@@ -148,6 +171,16 @@ bool preference_change_cb(char *key, char *value)
     }
     else if (!strcmp(key, "net_ip_address"))
     {
+        //
+        // Check if the IP address is actually changing, otherwise ignore the
+        // command
+        //
+        if ( strcmp(value, strIPAddress))
+        {
+            Serial.println("IP Change") ;
+            strcpy(strIPAddress, value) ;
+            prefs_update_string(PREF_COMMON_NETWORK_IPADDRESS, strIPAddress) ;
+        }
         fProcessed = true ;
     }
     else if (!strcmp(key, "net_gateway"))

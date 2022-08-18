@@ -35,6 +35,9 @@
 //
 
 //  Common
+//
+// TODO Does passphrase need encoding?
+//
 #define PREF_COMMON_DEFAULT_SSID        "Avian Ambassadors"
 #define PREF_COMMON_DEFAULT_PASSPHRASE  "mijo498rocks"      // Place the SSID pass phrase here if network is secure
 #define PREF_COMMON_DEFAULT_IPADDRESS   "192.168.1.254"

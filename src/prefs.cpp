@@ -9,7 +9,6 @@
 // Copyright Kevin Levesque 2022
 //
 
-
 #include <Arduino.h>
 
 #include <Preferences.h>
@@ -21,6 +20,7 @@
 
 #include "prefs.h"
 
+#pragma GCC diagnostic ignored "-Wwrite-strings"
 
 //
 // The following is the preferenes object, used to store network and other
@@ -165,11 +165,35 @@ bool preference_change_cb(char *key, char *value)
 {
     bool fProcessed = false ;
 
-    if (!strcmp(key, "net_ssid"))
+    if (!strcmp(key, PREF_COMMON_NETWORK_SSID))
     {
+        //
+        // Check if the SSID is actually changing, otherwise ignore the
+        // command
+        //
+        if ( strcmp(value, strSSID))
+        {
+            Serial.println("SSID Change") ;
+            strcpy(strSSID, value) ;
+            prefs_update_string(PREF_COMMON_NETWORK_SSID, strSSID) ;
+        }
         fProcessed = true ;
     }
-    else if (!strcmp(key, "net_ip_address"))
+    else if (!strcmp(key, PREF_COMMON_NETWORK_PASSPHRASE))
+    {
+        //
+        // Check if the passphrase is actually changing, otherwise ignore the
+        // command
+        //
+        if ( strcmp(value, strNetPassphrase))
+        {
+            Serial.println("Passphrase Change") ;
+            strcpy(strNetPassphrase, value) ;
+            prefs_update_string(PREF_COMMON_NETWORK_PASSPHRASE, strNetPassphrase) ;
+        }
+        fProcessed = true ;
+    }
+    else if (!strcmp(key, PREF_COMMON_NETWORK_IPADDRESS))
     {
         //
         // Check if the IP address is actually changing, otherwise ignore the
@@ -183,12 +207,32 @@ bool preference_change_cb(char *key, char *value)
         }
         fProcessed = true ;
     }
-    else if (!strcmp(key, "net_gateway"))
+    else if (!strcmp(key, PREF_COMMON_NETWORK_GATEWAY))
     {
+        //
+        // Check if the gateway is actually changing, otherwise ignore the
+        // command
+        //
+        if ( strcmp(value, strGateway))
+        {
+            Serial.println("Gateway Change") ;
+            strcpy(strGateway, value) ;
+            prefs_update_string(PREF_COMMON_NETWORK_GATEWAY, strGateway) ;
+        }
         fProcessed = true ;
     }
-    else if (!strcmp(key, "net_mask"))
+    else if (!strcmp(key, PREF_COMMON_NETWORK_MASK))
     {
+        //
+        // Check if the network mask is actually changing, otherwise ignore the
+        // command
+        //
+        if ( strcmp(value, strNetMask))
+        {
+            Serial.println("Netword Mask Change") ;
+            strcpy(strNetMask, value) ;
+            prefs_update_string(PREF_COMMON_NETWORK_MASK, strNetMask) ;
+        }
         fProcessed = true ;
     }
     if ( fProcessed )

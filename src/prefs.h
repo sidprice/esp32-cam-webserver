@@ -12,6 +12,7 @@ extern byte ipAddress[] ;
 extern byte netGateway[] ;
 extern byte netMask[] ;
 extern char strSSID[] ;
+extern char strNetPassphrase[] ;
 
 void prefs_get_preferences(void) ;
 bool preference_change_cb(char *key, char *value) ;

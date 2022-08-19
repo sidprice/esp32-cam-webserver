@@ -73,8 +73,10 @@ char strModuleType[64] = {0} ;
 
 void prefs_update_preferences(void)
 {
+    Serial.println("Update Preferences") ;
     if (changedSSID || changedPassPhrase || changedGateway || changedIPAddress || changedNetMask)
     {
+        Serial.println("Changes") ;
         preferences.begin("Common", false) ; // Open preferences common section for read/write
         if ( changedSSID )
         {
@@ -219,14 +221,14 @@ bool preference_change_cb(char *key, char *value)
         // Check if the SSID is actually changing, otherwise ignore the
         // command
         //
-        if ( strcmp(value, strSSID))
+        if ( (changedSSID = (strcmp(value, strSSID) != 0 ) ) )
         {
             Serial.println("SSID Change") ;
             strcpy(strSSID_new, value) ;    // Saved to be updated by the reboot command
         }
         fProcessed = true ;
     }
-    else if (!strcmp(key, PREF_COMMON_NETWORK_PASSPHRASE))
+    else if ( (changedPassPhrase = (strcmp(key, PREF_COMMON_NETWORK_PASSPHRASE) != 0) ) )
     {
         //
         // Check if the passphrase is actually changing, otherwise ignore the
@@ -239,7 +241,7 @@ bool preference_change_cb(char *key, char *value)
         }
         fProcessed = true ;
     }
-    else if (!strcmp(key, PREF_COMMON_NETWORK_IPADDRESS))
+    else if ( ( changedIPAddress = (strcmp(key, PREF_COMMON_NETWORK_IPADDRESS) != 0) ) )
     {
         //
         // Check if the IP address is actually changing, otherwise ignore the
@@ -252,7 +254,7 @@ bool preference_change_cb(char *key, char *value)
         }
         fProcessed = true ;
     }
-    else if (!strcmp(key, PREF_COMMON_NETWORK_GATEWAY))
+    else if ( (changedGateway = (strcmp(key, PREF_COMMON_NETWORK_GATEWAY) != 0 ) ) )
     {
         //
         // Check if the gateway is actually changing, otherwise ignore the
@@ -265,7 +267,7 @@ bool preference_change_cb(char *key, char *value)
         }
         fProcessed = true ;
     }
-    else if (!strcmp(key, PREF_COMMON_NETWORK_MASK))
+    else if ( ( changedNetMask = (strcmp(key, PREF_COMMON_NETWORK_MASK) != 0 ) ) )
     {
         //
         // Check if the network mask is actually changing, otherwise ignore the

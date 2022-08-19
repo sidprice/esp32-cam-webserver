@@ -37,27 +37,67 @@ Preferences preferences ;
 // TODO check if these need to be global variables
 //
 char strSSID[64] = {0} ;
+char strSSID_new[64] = {0} ;
+bool changedSSID = false ;
+
 char strNetPassphrase[64] = {0} ;
+char strNetPassphrase_new[64] = {0} ;
+bool changedPassPhrase = false ;
+
 char strIPAddress[64] = {0} ;
+char strIPAddress_new[64] = {0} ;
+bool changedIPAddress = false ;
 byte ipAddress[4] = {0} ;
+
 char strNetMask[64] = {0} ;
+char strNetMask_new[64] = {0} ;
+bool changedNetMask = false ;
 byte netMask[4] = {0} ;
+
 char strGateway[64] = {0} ;
+char strGateway_new[64] = {0} ;
+bool changedGateway = false ;
 byte netGateway[4] = {0} ;
+
 char strModuleType[64] = {0} ;
 
 //
-// Update the passed preference with the passed data
+// This function checks if any of the preferences have been change, if
+// so it updates them.
 //
-// Note this function assumes the host device has already initialized
-// the preferences during its startup. Otherwise the function will fail
+// Note:
+//      Changes to the preferences are made from the PBCC test application. New
+// values are placed into variables that have the "_new" suffix. A flag is set
+// for each preference that has been changed.
 //
 
-void prefs_update_string(char * key, char * value)
+void prefs_update_preferences(void)
 {
-    preferences.begin("Common", false) ; // Open preferences common section for read/write
-    preferences.putString(key, value) ;
-    preferences.end() ;     // CLose the preferences
+    if (changedSSID || changedPassPhrase || changedGateway || changedIPAddress || changedNetMask)
+    {
+        preferences.begin("Common", false) ; // Open preferences common section for read/write
+        if ( changedSSID )
+        {
+            preferences.putString(PREF_COMMON_NETWORK_SSID, strSSID_new) ;
+        }
+        if ( changedPassPhrase )
+        {
+            preferences.putString(PREF_COMMON_NETWORK_PASSPHRASE, strNetPassphrase_new) ;
+        }
+        if ( changedGateway )
+        {
+            preferences.putString(PREF_COMMON_NETWORK_GATEWAY, strGateway_new) ;
+        }
+        if ( changedIPAddress )
+        {
+            preferences.putString(PREF_COMMON_NETWORK_IPADDRESS, strIPAddress_new) ;
+        }
+        if ( changedNetMask )
+        {
+            preferences.putString(PREF_COMMON_NETWORK_MASK, strNetMask_new) ;
+        }
+        preferences.end() ;     // CLose the preferences
+    }
 }
 
 //
@@ -158,8 +198,6 @@ void prefs_get_preferences(bool factoryReset)
     Serial.print("\tModule type is -> ") ; Serial.println(strModuleType) ;
     // preferences.remove(PREF_COMMON_NETWORK_SSID) ;  // Temp
     preferences.end() ;
-    while(1) ;
-
 }
 
 //
@@ -184,8 +222,7 @@ bool preference_change_cb(char *key, char *value)
         if ( strcmp(value, strSSID))
         {
             Serial.println("SSID Change") ;
-            strcpy(strSSID, value) ;
-            prefs_update_string(PREF_COMMON_NETWORK_SSID, strSSID) ;
+            strcpy(strSSID_new, value) ;    // Saved to be updated by the reboot command
         }
         fProcessed = true ;
     }
@@ -198,8 +235,7 @@ bool preference_change_cb(char *key, char *value)
         if ( strcmp(value, strNetPassphrase))
         {
             Serial.println("Passphrase Change") ;
-            strcpy(strNetPassphrase, value) ;
-            prefs_update_string(PREF_COMMON_NETWORK_PASSPHRASE, strNetPassphrase) ;
+            strcpy(strNetPassphrase_new, value) ;
         }
         fProcessed = true ;
     }
@@ -212,8 +248,7 @@ bool preference_change_cb(char *key, char *value)
         if ( strcmp(value, strIPAddress))
         {
             Serial.println("IP Change") ;
-            strcpy(strIPAddress, value) ;
-            prefs_update_string(PREF_COMMON_NETWORK_IPADDRESS, strIPAddress) ;
+            strcpy(strIPAddress_new, value) ;
         }
         fProcessed = true ;
     }
@@ -226,8 +261,7 @@ bool preference_change_cb(char *key, char *value)
         if ( strcmp(value, strGateway))
         {
             Serial.println("Gateway Change") ;
-            strcpy(strGateway, value) ;
-            prefs_update_string(PREF_COMMON_NETWORK_GATEWAY, strGateway) ;
+            strcpy(strGateway_new, value) ;
         }
         fProcessed = true ;
     }
@@ -240,8 +274,7 @@ bool preference_change_cb(char *key, char *value)
         if ( strcmp(value, strNetMask))
         {
             Serial.println("Netword Mask Change") ;
-            strcpy(strNetMask, value) ;
-            prefs_update_string(PREF_COMMON_NETWORK_MASK, strNetMask) ;
+            strcpy(strNetMask_new, value) ;
         }
         fProcessed = true ;
     }

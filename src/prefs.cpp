@@ -203,6 +203,24 @@ void prefs_get_preferences(bool factoryReset)
 }
 
 //
+// If the values sent over HTTP have embedded spaces they will be represented
+// by "%20", these must be removed
+//
+char * prefs_remove_spaces(char * value)
+{
+    char * start, * end ;
+
+    while( (start = strstr(value, "%20") ) != 0 )
+    {
+        *start++ = ' ' ;
+        end = start + 2 ;
+        strcpy(start, end ) ;
+    }
+    Serial.println(value) ;
+    return value ;
+}
+
+//
 // This callback function is called each tome the module receives an http command. It checks
 // if it is a preferecne related extension command and if it is it executes the command and 
 // returns true to indicate the command was processed.
@@ -224,59 +242,59 @@ bool preference_change_cb(char *key, char *value)
         if ( (changedSSID = (strcmp(value, strSSID) != 0 ) ) )
         {
             Serial.println("SSID Change") ;
-            strcpy(strSSID_new, value) ;    // Saved to be updated by the reboot command
+            strcpy(strSSID_new, prefs_remove_spaces(value)) ;    // Saved to be updated by the reboot command
         }
         fProcessed = true ;
     }
-    else if ( (changedPassPhrase = (strcmp(key, PREF_COMMON_NETWORK_PASSPHRASE) != 0) ) )
+    else if ( !strcmp(key, PREF_COMMON_NETWORK_PASSPHRASE))
     {
         //
         // Check if the passphrase is actually changing, otherwise ignore the
         // command
         //
-        if ( strcmp(value, strNetPassphrase))
+        if ( ( changedPassPhrase = (strcmp(value, strNetPassphrase) != 0 ) ) )
         {
             Serial.println("Passphrase Change") ;
-            strcpy(strNetPassphrase_new, value) ;
+            strcpy(strNetPassphrase_new, prefs_remove_spaces(value)) ;
         }
         fProcessed = true ;
     }
-    else if ( ( changedIPAddress = (strcmp(key, PREF_COMMON_NETWORK_IPADDRESS) != 0) ) )
+    else if ( !strcmp(key, PREF_COMMON_NETWORK_IPADDRESS) != 0)
     {
         //
         // Check if the IP address is actually changing, otherwise ignore the
         // command
         //
-        if ( strcmp(value, strIPAddress))
+        if ( ( changedIPAddress = (strcmp(value, strIPAddress) != 0 ) ) )
         {
             Serial.println("IP Change") ;
-            strcpy(strIPAddress_new, value) ;
+            strcpy(strIPAddress_new, prefs_remove_spaces(value)) ;
         }
         fProcessed = true ;
     }
-    else if ( (changedGateway = (strcmp(key, PREF_COMMON_NETWORK_GATEWAY) != 0 ) ) )
+    else if ( !strcmp(key, PREF_COMMON_NETWORK_GATEWAY) != 0 )
     {
         //
         // Check if the gateway is actually changing, otherwise ignore the
         // command
         //
-        if ( strcmp(value, strGateway))
+        if ( ( changedGateway = (strcmp(value, strGateway) != 0 ) ) )
         {
             Serial.println("Gateway Change") ;
-            strcpy(strGateway_new, value) ;
+            strcpy(strGateway_new, prefs_remove_spaces(value)) ;
         }
         fProcessed = true ;
     }
-    else if ( ( changedNetMask = (strcmp(key, PREF_COMMON_NETWORK_MASK) != 0 ) ) )
+    else if ( !strcmp(key, PREF_COMMON_NETWORK_MASK) != 0 )
     {
         //
         // Check if the network mask is actually changing, otherwise ignore the
         // command
         //
-        if ( strcmp(value, strNetMask))
+        if ( ( changedNetMask =  (strcmp(value, strNetMask) != 0 ) ) )
         {
-            Serial.println("Netword Mask Change") ;
-            strcpy(strNetMask_new, value) ;
+            Serial.println("Network Mask Change") ;
+            strcpy(strNetMask_new, prefs_remove_spaces(value)) ;
         }
         fProcessed = true ;
     }

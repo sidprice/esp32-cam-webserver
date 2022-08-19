@@ -435,6 +435,7 @@ static esp_err_t cmd_handler(httpd_req_t *req){
         // Write any changed preferences
         //
         prefs_update_preferences() ;
+        httpd_resp_send(req, NULL, 0);
         esp_task_wdt_init(3,true);  // schedule a a watchdog panic event for 3 seconds in the future
         esp_task_wdt_add(NULL);
         periph_module_disable(PERIPH_I2C0_MODULE); // try to shut I2C down properly

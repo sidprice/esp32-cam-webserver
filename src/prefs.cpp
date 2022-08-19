@@ -73,10 +73,9 @@ char strModuleType[64] = {0} ;
 
 void prefs_update_preferences(void)
 {
-    Serial.println("Update Preferences") ;
     if (changedSSID || changedPassPhrase || changedGateway || changedIPAddress || changedNetMask)
     {
-        Serial.println("Changes") ;
+        Serial.println("Update Preferences") ;
         preferences.begin("Common", false) ; // Open preferences common section for read/write
         if ( changedSSID )
         {

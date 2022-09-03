@@ -38,8 +38,8 @@
 //
 // TODO Does passphrase need encoding?
 //
-#define PREF_COMMON_DEFAULT_SSID        "Avian Ambassadors"
-#define PREF_COMMON_DEFAULT_PASSPHRASE  "mijo498rocks"      // Place the SSID pass phrase here if network is secure
+#define PREF_COMMON_DEFAULT_SSID        "ESP32_Administration_Network"
+#define PREF_COMMON_DEFAULT_PASSPHRASE  "pass_phrase"      // Place the SSID pass phrase here if network is secure
 #define PREF_COMMON_DEFAULT_IPADDRESS   "192.168.1.254"
 #define PREF_COMMON_DEFAULT_GATEWAY     "192.168.0.1"
 #define PREF_COMMON_DEFAULT_MASK        "255.255.0.0"

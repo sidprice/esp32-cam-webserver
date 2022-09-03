@@ -473,7 +473,7 @@ void WifiSetup() {
     WiFi.config(ipAddress, netGateway, netMask) ;
 
     // Initiate network connection request (3rd argument, channel = 0 is 'auto')
-    WiFi.begin(strSSID, (char *)"mijo498rocks") ;
+    WiFi.begin(strSSID, strNetPassphrase) ;
 
     // Wait to connect, or timeout
     unsigned long start = millis();

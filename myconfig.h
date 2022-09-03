@@ -22,7 +22,7 @@
  *    just replace your ssid and password in the line below.
  */
 
-struct station stationList[] = {{"Avian Ambassadors","mijo498rocks", true}};
+struct station stationList[] = {{"ESP32_Administration_Network","pass_phrase", true}};
 
 /*
  * You can extend the stationList[] above with additional SSID+Password pairs

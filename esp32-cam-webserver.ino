@@ -120,7 +120,7 @@ extern void serialDump();
 #endif
 
 // Number of known networks in stationList[]
-int stationCount = sizeof(stationList)/sizeof(stationList[0]);
+// int stationCount = sizeof(stationList)/sizeof(stationList[0]);
 
 // If we have AP mode enabled, ignore first entry in the stationList[]
 #if defined(WIFI_AP_ENABLE)
@@ -577,13 +577,13 @@ void setup() {
         }
     }
 
-    if (stationCount == 0) {
-        Serial.println("\r\nFatal Error; Halting");
-        while (true) {
-            Serial.println("No wifi details have been configured; we cannot connect to existing WiFi or start our own AccessPoint, there is no point in proceeding.");
-            delay(5000);
-        }
-    }
+    // if (stationCount == 0) {
+    //     Serial.println("\r\nFatal Error; Halting");
+    //     while (true) {
+    //         Serial.println("No wifi details have been configured; we cannot connect to existing WiFi or start our own AccessPoint, there is no point in proceeding.");
+    //         delay(5000);
+    //     }
+    // }
 
     #if defined(LED_PIN)  // If we have a notification LED, set it to output
         pinMode(LED_PIN, OUTPUT);
@@ -619,7 +619,30 @@ void setup() {
     /*
     * Camera setup complete; initialise the rest of the hardware.
     */
+    Serial.println("scan start");
 
+    // WiFi.scanNetworks will return the number of networks found
+    int n = WiFi.scanNetworks();
+    Serial.println("scan done");
+    if (n == 0) {
+        Serial.println("no networks found");
+    } else {
+        Serial.print(n);
+        Serial.println(" networks found");
+        for (int i = 0; i < n; ++i) {
+            // Print SSID and RSSI for each network found
+            Serial.print(i + 1);
+            Serial.print(": ");
+            Serial.print(WiFi.SSID(i));
+            Serial.print(" (");
+            Serial.print(WiFi.RSSI(i));
+            Serial.print(")");
+            Serial.print(WiFi.encryptionType(i)) ;
+            Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+            delay(10);
+        }
+    }
+    Serial.println("Done");
     // Start Wifi and loop until we are connected or have started an AccessPoint
     while ((WiFi.status() != WL_CONNECTED) && !accesspoint)  {
         WifiSetup();

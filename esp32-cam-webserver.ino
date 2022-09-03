@@ -241,6 +241,22 @@ String critERR = "";
 // Debug flag for stream and capture data
 bool debugData;
 
+//
+// Lookup the textual Wi-Fi mode for network scanning reporting
+//
+
+static const char * wifi_modes[] = {
+    "Open",
+    "WEP",
+    "WPA and PSK",
+    "WPA, WPA2, and PSK",
+    "WPA, WPA2, and PSK",
+    "WPA2 Enterprise",
+    "WPA3 and PSK",
+    "WAP2, WPA3, and PSK",
+    "WAPI and PSK",
+} ;
+
 void debugOn() {
     debugData = true;
     Serial.println("Camera debug data is enabled (send 'd' for status dump, or any other char to disable debug)");
@@ -636,9 +652,8 @@ void setup() {
             Serial.print(WiFi.SSID(i));
             Serial.print(" (");
             Serial.print(WiFi.RSSI(i));
-            Serial.print(")");
-            Serial.print(WiFi.encryptionType(i)) ;
-            Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+            Serial.print(") ");
+            Serial.println(wifi_modes[WiFi.encryptionType(i)]) ;
             delay(10);
         }
     }

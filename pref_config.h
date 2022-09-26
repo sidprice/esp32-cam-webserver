@@ -40,9 +40,9 @@
 //
 #define PREF_COMMON_DEFAULT_SSID        "ESP32_Administration_Network"
 #define PREF_COMMON_DEFAULT_PASSPHRASE  "pass_phrase"      // Place the SSID pass phrase here if network is secure
-#define PREF_COMMON_DEFAULT_IPADDRESS   "192.168.1.254"
+#define PREF_COMMON_DEFAULT_IPADDRESS   "192.168.0.254"
 #define PREF_COMMON_DEFAULT_GATEWAY     "192.168.0.1"
-#define PREF_COMMON_DEFAULT_MASK        "255.255.0.0"
+#define PREF_COMMON_DEFAULT_MASK        "255.255.255.0"
 
 //
 // Edit the variable value below to define the module type being built

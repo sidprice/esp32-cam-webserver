@@ -5,12 +5,12 @@
 #include <DNSServer.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-#include "src/parsebytes.h"
 #include "time.h"
 #include <ESPmDNS.h>
 
+#include "src/prefs.h"
 
-/* This sketch is a extension/expansion/reork of the 'official' ESP32 Camera example
+/* This sketch is a extension/expansion/rework of the 'official' ESP32 Camera example
  *  sketch from Expressif:
  *  https://github.com/espressif/arduino-esp32/tree/master/libraries/ESP32/examples/Camera/CameraWebServer
  *
@@ -25,16 +25,14 @@
  *  more feeedback, new controls and other tweaks and changes,
  * note: Make sure that you have either selected ESP32 AI Thinker,
  *       or another board which has PSRAM enabled to use high resolution camera modes
+ * 
+ * It is further updated by Sid Price for Kevin Levesque to support saving neywork settings
+ * in user preferences and HTTP interface to PowerBasic app for adjusting those parameters.
+ * 
+ * 
  */
 
-
-/*
- *  FOR NETWORK AND HARDWARE SETTINGS COPY OR RENAME 'myconfig.sample.h' TO 'myconfig.h' AND EDIT THAT.
- *
- * By default this sketch will assume an AI-THINKER ESP-CAM and create
- * an accesspoint called "ESP32-CAM-CONNECT" (password: "InsecurePassword")
- *
- */
+byte mac[6] ;
 
 // Primary config, or defaults.
 #if __has_include("myconfig.h")
@@ -53,6 +51,12 @@
 
 // Pin Mappings
 #include "camera_pins.h"
+
+//
+// Define the GPIO pin used for factory reset input, this is one of
+// the SD Card GPIO pins, SD Card cannot be used.
+//
+#define FACTOR_RESET    2   // GOIO2
 
 // Camera config structure
 camera_config_t config;
@@ -83,7 +87,7 @@ extern void serialDump();
 #if defined(CAM_NAME)
     char myName[] = CAM_NAME;
 #else
-    char myName[] = "ESP32 camera server";
+    char myName[64] = "ESP32 camera server";
 #endif
 
 #if defined(MDNS_NAME)
@@ -110,7 +114,7 @@ extern void serialDump();
 #endif
 
 // Number of known networks in stationList[]
-int stationCount = sizeof(stationList)/sizeof(stationList[0]);
+// int stationCount = sizeof(stationList)/sizeof(stationList[0]);
 
 // If we have AP mode enabled, ignore first entry in the stationList[]
 #if defined(WIFI_AP_ENABLE)
@@ -231,6 +235,22 @@ String critERR = "";
 // Debug flag for stream and capture data
 bool debugData;
 
+//
+// Lookup the textual Wi-Fi mode for network scanning reporting
+//
+
+static const char * wifi_modes[] = {
+    "Open",
+    "WEP",
+    "WPA and PSK",
+    "WPA, WPA2, and PSK",
+    "WPA, WPA2, and PSK",
+    "WPA2 Enterprise",
+    "WPA3 and PSK",
+    "WAP2, WPA3, and PSK",
+    "WAPI and PSK",
+} ;
+
 void debugOn() {
     debugData = true;
     Serial.println("Camera debug data is enabled (send 'd' for status dump, or any other char to disable debug)");
@@ -257,7 +277,7 @@ void handleSerial() {
 
 // Notification LED
 void flashLED(int flashtime) {
-#if defined(LED_PIN)                // If we have it; flash it.
+#if defined(LED_PIN)
     digitalWrite(LED_PIN, LED_ON);  // On at full power.
     delay(flashtime);               // delay
     digitalWrite(LED_PIN, LED_OFF); // turn Off
@@ -444,139 +464,55 @@ void StartCamera() {
 }
 
 void WifiSetup() {
-    // Feedback that we are now attempting to connect
-    flashLED(300);
-    delay(100);
-    flashLED(300);
     Serial.println("Starting WiFi");
 
     // Disable power saving on WiFi to improve responsiveness
     // (https://github.com/espressif/arduino-esp32/issues/1484)
     WiFi.setSleep(false);
 
-    Serial.print("Known external SSIDs: ");
-    if (stationCount > firstStation) {
-        for (int i=firstStation; i < stationCount; i++) Serial.printf(" '%s'", stationList[i].ssid);
-    } else {
-        Serial.print("None");
+    //
+    // Configure the device with a static IP address.
+    //
+    // These settings are recovered from the prefernces file
+    // by the setup function. This function MUST be called
+    // before the WifiSetup function.
+    //
+    // Also, the Wi-Fi configuration function must be called
+    // before the Wi-Fi is started
+    //
+    WiFi.config(ipAddress, netGateway, netMask) ;
+
+    // Initiate network connection request (3rd argument, channel = 0 is 'auto')
+    WiFi.begin(strSSID, strNetPassphrase) ;
+
+    // Wait to connect, or timeout
+    unsigned long start = millis();
+    while ((millis() - start <= WIFI_WATCHDOG) && (WiFi.status() != WL_CONNECTED)) {
+        delay(500);
+        Serial.print('.');
     }
-    Serial.println();
-    byte mac[6] = {0,0,0,0,0,0};
-    WiFi.macAddress(mac);
-    Serial.printf("MAC address: %02X:%02X:%02X:%02X:%02X:%02X\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-
-    int bestStation = -1;
-    long bestRSSI = -1024;
-    char bestSSID[65] = "";
-    uint8_t bestBSSID[6];
-    if (stationCount > firstStation) {
-        // We have a list to scan
-        Serial.printf("Scanning local Wifi Networks\r\n");
-        int stationsFound = WiFi.scanNetworks();
-        Serial.printf("%i networks found\r\n", stationsFound);
-        if (stationsFound > 0) {
-            for (int i = 0; i < stationsFound; ++i) {
-                // Print SSID and RSSI for each network found
-                String thisSSID = WiFi.SSID(i);
-                int thisRSSI = WiFi.RSSI(i);
-                String thisBSSID = WiFi.BSSIDstr(i);
-                Serial.printf("%3i : [%s] %s (%i)", i + 1, thisBSSID.c_str(), thisSSID.c_str(), thisRSSI);
-                // Scan our list of known external stations
-                for (int sta = firstStation; sta < stationCount; sta++) {
-                    if ((strcmp(stationList[sta].ssid, thisSSID.c_str()) == 0) ||
-                    (strcmp(stationList[sta].ssid, thisBSSID.c_str()) == 0)) {
-                        Serial.print("  -  Known!");
-                        // Chose the strongest RSSI seen
-                        if (thisRSSI > bestRSSI) {
-                            bestStation = sta;
-                            strncpy(bestSSID, thisSSID.c_str(), 64);
-                            // Convert char bssid[] to a byte array
-                            parseBytes(thisBSSID.c_str(), ':', bestBSSID, 6, 16);
-                            bestRSSI = thisRSSI;
-                        }
-                    }
-                }
-                Serial.println();
-            }
+    // If we have connected, inform user
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("Client connection succeeded");
+        accesspoint = false;
+        // Note IP details
+        ip = WiFi.localIP();
+        net = WiFi.subnetMask();
+        gw = WiFi.gatewayIP();
+        WiFi.macAddress(mac);
+        Serial.printf("IP address  : %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
+        Serial.printf("Netmask     : %d.%d.%d.%d\r\n",net[0],net[1],net[2],net[3]);
+        Serial.printf("Gateway     : %d.%d.%d.%d\r\n",gw[0],gw[1],gw[2],gw[3]);
+        Serial.printf("MAC address : %02X:%02X:%02X:%02X:%02X:%02X\r\n", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]) ;
+        calcURLs();
+        // Flash the LED to show we are connected
+        for (int i = 0; i < 5; i++) {
+            flashLED(50);
+            delay(150);
         }
     } else {
-        // No list to scan, therefore we are an accesspoint
-        accesspoint = true;
-    }
-
-    if (bestStation == -1) {
-        if (!accesspoint) {
-            #if defined(WIFI_AP_ENABLE)
-                Serial.println("No known networks found, entering AccessPoint fallback mode");
-                accesspoint = true;
-            #else
-                Serial.println("No known networks found");
-            #endif
-        } else {
-            Serial.println("AccessPoint mode selected in config");
-        }
-    } else {
-        Serial.printf("Connecting to Wifi Network %d: [%02X:%02X:%02X:%02X:%02X:%02X] %s \r\n",
-                       bestStation, bestBSSID[0], bestBSSID[1], bestBSSID[2], bestBSSID[3],
-                       bestBSSID[4], bestBSSID[5], bestSSID);
-        // Apply static settings if necesscary
-        if (stationList[bestStation].dhcp == false) {
-            #if defined(ST_IP)
-                Serial.println("Applying static IP settings");
-                #if !defined (ST_GATEWAY)  || !defined (ST_NETMASK)
-                    #error "You must supply both Gateway and NetMask when specifying a static IP address"
-                #endif
-                IPAddress staticIP(ST_IP);
-                IPAddress gateway(ST_GATEWAY);
-                IPAddress subnet(ST_NETMASK);
-                #if !defined(ST_DNS1)
-                    WiFi.config(staticIP, gateway, subnet);
-                #else
-                    IPAddress dns1(ST_DNS1);
-                #if !defined(ST_DNS2)
-                    WiFi.config(staticIP, gateway, subnet, dns1);
-                #else
-                    IPAddress dns2(ST_DNS2);
-                    WiFi.config(staticIP, gateway, subnet, dns1, dns2);
-                #endif
-                #endif
-            #else
-                Serial.println("Static IP settings requested but not defined in config, falling back to dhcp");
-            #endif
-        }
-
-        WiFi.setHostname(mdnsName);
-
-        // Initiate network connection request (3rd argument, channel = 0 is 'auto')
-        WiFi.begin(bestSSID, stationList[bestStation].password, 0, bestBSSID);
-
-        // Wait to connect, or timeout
-        unsigned long start = millis();
-        while ((millis() - start <= WIFI_WATCHDOG) && (WiFi.status() != WL_CONNECTED)) {
-            delay(500);
-            Serial.print('.');
-        }
-        // If we have connected, inform user
-        if (WiFi.status() == WL_CONNECTED) {
-            Serial.println("Client connection succeeded");
-            accesspoint = false;
-            // Note IP details
-            ip = WiFi.localIP();
-            net = WiFi.subnetMask();
-            gw = WiFi.gatewayIP();
-            Serial.printf("IP address: %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
-            Serial.printf("Netmask   : %d.%d.%d.%d\r\n",net[0],net[1],net[2],net[3]);
-            Serial.printf("Gateway   : %d.%d.%d.%d\r\n",gw[0],gw[1],gw[2],gw[3]);
-            calcURLs();
-            // Flash the LED to show we are connected
-            for (int i = 0; i < 5; i++) {
-                flashLED(50);
-                delay(150);
-            }
-        } else {
-            Serial.println("Client connection Failed");
-            WiFi.disconnect();   // (resets the WiFi scan)
-        }
+        Serial.println("Client connection Failed");
+        WiFi.disconnect();   // (resets the WiFi scan)
     }
 
     if (accesspoint && (WiFi.status() != WL_CONNECTED)) {
@@ -641,6 +577,7 @@ void setup() {
     Serial.println(baseVersion);
     Serial.println();
 
+    flashLED(250) ;
     // Warn if no PSRAM is detected (typically user error with board selection in the IDE)
     if(!psramFound()){
         Serial.println("\r\nFatal Error; Halting");
@@ -650,21 +587,30 @@ void setup() {
         }
     }
 
-    if (stationCount == 0) {
-        Serial.println("\r\nFatal Error; Halting");
-        while (true) {
-            Serial.println("No wifi details have been configured; we cannot connect to existing WiFi or start our own AccessPoint, there is no point in proceeding.");
-            delay(5000);
-        }
-    }
+    // if (stationCount == 0) {
+    //     Serial.println("\r\nFatal Error; Halting");
+    //     while (true) {
+    //         Serial.println("No wifi details have been configured; we cannot connect to existing WiFi or start our own AccessPoint, there is no point in proceeding.");
+    //         delay(5000);
+    //     }
+    // }
 
     #if defined(LED_PIN)  // If we have a notification LED, set it to output
         pinMode(LED_PIN, OUTPUT);
         digitalWrite(LED_PIN, LED_ON);
     #endif
 
+    // Set up the factory reset pin as an input
+    pinMode(FACTOR_RESET, INPUT_PULLUP | INPUT) ;
+    prefs_get_preferences(!digitalRead(FACTOR_RESET)) ;
+    //
     // Start the SPIFFS filesystem before we initialise the camera
+    //
+    //  For this projct the file system is not used and the variable
+    // NO_FS is uncommented in myconfig.h
+    //
     if (filesystem) {
+        Serial.println("FS Starting") ;
         filesystemStart();
         delay(200); // a short delay to let spi bus settle after SPIFFS init
     }
@@ -683,13 +629,36 @@ void setup() {
     /*
     * Camera setup complete; initialise the rest of the hardware.
     */
+    Serial.println("scan start");
 
+    // WiFi.scanNetworks will return the number of networks found
+    int n = WiFi.scanNetworks();
+    Serial.println("scan done");
+    if (n == 0) {
+        Serial.println("no networks found");
+    } else {
+        Serial.print(n);
+        Serial.println(" networks found");
+        for (int i = 0; i < n; ++i) {
+            // Print SSID and RSSI for each network found
+            Serial.print(i + 1);
+            Serial.print(": ");
+            Serial.print(WiFi.SSID(i));
+            Serial.print(" (");
+            Serial.print(WiFi.RSSI(i));
+            Serial.print(") ");
+            Serial.println(wifi_modes[WiFi.encryptionType(i)]) ;
+            delay(10);
+        }
+    }
+    Serial.println("Done");
     // Start Wifi and loop until we are connected or have started an AccessPoint
     while ((WiFi.status() != WL_CONNECTED) && !accesspoint)  {
         WifiSetup();
         delay(1000);
     }
 
+#if 0
     // Set up OTA
     if (otaEnabled) {
         // Start OTA once connected
@@ -743,12 +712,13 @@ void setup() {
           Serial.println("Error setting up MDNS responder!");
         }
         Serial.println("mDNS responder started");
+        Serial.print("MDNS Name is ") ; Serial.println(mdnsName) ;
     }
 
     //MDNS Config -- note that if OTA is NOT enabled this needs prior steps!
     MDNS.addService("http", "tcp", 80);
     Serial.println("Added HTTP service to MDNS server");
-
+#endif
     // Set time via NTP server when enabled
     if (haveTime) {
         Serial.print("Time: ");
@@ -774,6 +744,12 @@ void setup() {
     } else {
         Serial.println("No lamp, or lamp disabled in config");
     }
+    //
+    // Adjust the camera name to use the MAC address to make it unique
+    //
+    WiFi.macAddress(mac) ;
+    sprintf(&myName[0], "ESP32-CAM %02X-%02X-%02X", mac[3], mac[4], mac[5]) ;
+    Serial.println(myName) ;
 
     // Start the camera server
     startCameraServer(httpPort, streamPort);

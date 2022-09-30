@@ -57,6 +57,17 @@ dcw             - 0 = disable, 1 = enable
 colorbar        - Overlays a color test pattern on the stream; integer, 1 = enabled
 face_detect     - Face Detection; 1 = enabled, Only settable if framesize <= 4 (CIF)
 face_recognize  - Face recognition; 1 = enabled, only settable if Face detection is already enabled
+
+                - COMMON NETWORK PREFERENCES
+
+net_ssid        - Wi-Fi network name - default is "ESP32_Administration_Network"
+net_pass        - Password for the SSID
+net_ip_address  - The host module's IP address, must be in the range xxx.yyy.100.253 - default is "xxx.yyy.100.254"
+net_gateway     - The network's gateway address - default is 192.168.0.1
+net_mask        - The network's ip address mask - default is 255.255.0.0
+
+                - OTHER COMMANDS
+fac_default     - Used to reset all preferecnes to defaults and reboots the module to apply them
 ```
 #### Read Only
 These values are returned in the `/status` JSON response, but cannot be set via the `/control` URI.

@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+//  Updates by Sid Price for Kevin Levesque
+//
 
 #include <esp_http_server.h>
 #include <esp_timer.h>
@@ -27,6 +30,8 @@
 #include "src/favicons.h"
 #include "src/logo.h"
 #include "storage.h"
+
+#include "src/prefs.h"
 
 // Functions from the main .ino
 extern void flashLED(int flashtime);
@@ -320,6 +325,9 @@ static esp_err_t stream_handler(httpd_req_t *req){
     return res;
 }
 
+extern bool    ssid_changed ;
+extern char    newSSID[] ;
+
 static esp_err_t cmd_handler(httpd_req_t *req){
     char*  buf;
     size_t buf_len;
@@ -359,7 +367,16 @@ static esp_err_t cmd_handler(httpd_req_t *req){
     int val = atoi(value);
     sensor_t * s = esp_camera_sensor_get();
     int res = 0;
-    if(!strcmp(variable, "framesize")) {
+    Serial.println("Command") ;
+    //
+    // Process the module specific preferences first because they are the ones most
+    // often used in the Wi-Fi Test Setup system
+    //
+    if (preference_change_cb(variable, value))
+    {
+         // All done, the command was an API extension
+    }
+    else if(!strcmp(variable, "framesize")) {
         if(s->pixformat == PIXFORMAT_JPEG) res = s->set_framesize(s, (framesize_t)val);
     }
     else if(!strcmp(variable, "quality")) res = s->set_quality(s, val);
@@ -414,6 +431,11 @@ static esp_err_t cmd_handler(httpd_req_t *req){
     }
     else if(!strcmp(variable, "reboot")) {
         if (lampVal != -1) setLamp(0); // kill the lamp; otherwise it can remain on during the soft-reboot
+        //
+        // Write any changed preferences
+        //
+        prefs_update_preferences() ;
+        httpd_resp_send(req, NULL, 0);
         esp_task_wdt_init(3,true);  // schedule a a watchdog panic event for 3 seconds in the future
         esp_task_wdt_add(NULL);
         periph_module_disable(PERIPH_I2C0_MODULE); // try to shut I2C down properly

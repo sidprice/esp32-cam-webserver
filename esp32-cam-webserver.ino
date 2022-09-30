@@ -26,19 +26,13 @@
  * note: Make sure that you have either selected ESP32 AI Thinker,
  *       or another board which has PSRAM enabled to use high resolution camera modes
  * 
- * It is further updated by Sid Price for Kevin Levesque.
+ * It is further updated by Sid Price for Kevin Levesque to support saving neywork settings
+ * in user preferences and HTTP interface to PowerBasic app for adjusting those parameters.
+ * 
  * 
  */
 
 byte mac[6] ;
-
-/*
- *  FOR NETWORK AND HARDWARE SETTINGS COPY OR RENAME 'myconfig.sample.h' TO 'myconfig.h' AND EDIT THAT.
- *
- * By default this sketch will assume an AI-THINKER ESP-CAM and create
- * an accesspoint called "ESP32-CAM-CONNECT" (password: "InsecurePassword")
- *
- */
 
 // Primary config, or defaults.
 #if __has_include("myconfig.h")
